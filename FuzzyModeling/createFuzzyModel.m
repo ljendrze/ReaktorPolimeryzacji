@@ -30,7 +30,9 @@ localModelsOutputValues = [ 10000; 25000; 40000 ];
 fuzzyModel = struct( ...
    'inputsNo', 1, ...
    'outputsNo', 1, ...
-   'rulesNo', length(localModelsOutputValues) );
+   'rulesNo', length(localModelsOutputValues), ...
+   'uMin', 0.001, ...
+   'uMax', 0.2 );
  
 fuzzyModel.S = cell(0);
 fuzzyModel.u0 = cell(0);
@@ -63,8 +65,11 @@ for i = 1 : length(localModelsOutputValues)
                            localModelsInputs{i} + stepSize, ...
                            localModelsDisturbances{i} );
 
-   localModelsStepResponses{i} = ( xout(:,4) ./ xout(:,3) )';
+   localModelsStepResponses{i} = ( xout(:,4) ./ xout(:,3) );
    localModelsStepResponses{i} = localModelsStepResponses{i}(2:dynamicsHorizon+1);
+
+   localModelsStepResponses{i} = ...
+      ( localModelsStepResponses{i} - localModelsOutputs{i} ) / stepSize;
 end
 
 for i = 1 : length(localModelsOutputValues)
@@ -75,16 +80,16 @@ for i = 1 : length(localModelsOutputValues)
 
    if i == 1
       fuzzyModel.MFType{i} = 'trapmf';
-      mfparams = [ - Inf; - Inf; localModelsOutputs{1}; localModelsOutputs{2} ]
-      fuzzyModel.MFParams{i} = mfparams;
+      fuzzyModel.MFParams{i} = ...
+         [ - Inf; - Inf; localModelsOutputs{1}; localModelsOutputs{2} ];
    elseif i == length(localModelsOutputValues)
       fuzzyModel.MFType{i} = 'trapmf';
-      mfparams = [ localModelsOutputs{i-1}; localModelsOutputs{i}; Inf; Inf ]
-      fuzzyModel.MFParams{i} = mfparams;
+      fuzzyModel.MFParams{i} = ...
+         [ localModelsOutputs{i-1}; localModelsOutputs{i}; Inf; Inf ];
    else
       fuzzyModel.MFType{i} = 'trimf';
-      mfparams = [ localModelsOutputs{i-1}; localModelsOutputs{i}; localModelsOutputs{i+1} ]
-      fuzzyModel.MFParams{i} = mfparams;
+      fuzzyModel.MFParams{i} = ...
+         [ localModelsOutputs{i-1}; localModelsOutputs{i}; localModelsOutputs{i+1} ];
    end
 end
 
